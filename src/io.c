@@ -13,7 +13,8 @@
 #include <spectrum.h>
 #endif
 #ifdef __ESP8266__
-//??? What is the include for the ZXN ports on classiclib
+#include <arch/zxn/esxdos.h>
+#include <errno.h>
 #endif
 #include "io.h"
 #include "protocol.h"
@@ -29,21 +30,37 @@ struct hostent *he;
 char host_name[32];
 #endif
 #ifdef __ESP8266__
-#define TX 4923
-#define RX 5179
 
 
-//
-//uint32_t uart_clock[] = {
-//        CLK_28_0,
-//        CLK_28_1,
-//        CLK_28_2,
-//        CLK_28_3,
-//        CLK_28_4,
-//        CLK_28_5,
-//        CLK_28_6,
-//        CLK_28_7
-//};
+#define NOS_Initialise	 0x80
+#define NOS_Shutdown	 0x81
+#define NOS_Open	     0xF9
+#define NOS_Close	     0xFA
+#define NOS_OutputChar	 0xFB
+#define NOS_InputChar	 0xFC
+#define NOS_GetCurStrPtr 0xFD
+#define NOS_SetCurStrPtr 0xFE
+#define NOS_GetStrExtent 0xFF
+#define NEAT_Deprecated  0x01
+#define NEAT_SetCurChan	 0x02
+#define NEAT_GetChanVals 0x03
+#define NEAT_SetChanVals 0x04
+#define NEAT_SetTimeouts 0x05
+#define NEAT_AddBank	 0x06
+#define NEAT_RemoveBank	 0x07
+#define NEAT_GetESPLink	 0x08
+#define NEAT_SetBaudRate 0x09
+#define NEAT_SetBuffMode 0x0A
+#define NEAT_ProcessCMD	 0x0B
+
+ int nethandle;
+
+static struct esx_drvapi rtc ;// = { 0,0,0 }; //Can't initialise this, if you leave it in it causes error
+static struct esx_drvapi net ;// = { 'N'*256 + 0, 0, 0 };
+
+static char CONNECTstring[32] = "TCP,IRATA.ONLINE,8005";
+
+
 #endif
 
 
@@ -65,12 +82,32 @@ void io_init(void)
   connect(sockfd,&remoteaddr,sizeof(struct sockaddr_in));
 #endif
 #ifdef __ESP8266__
-    unsigned int prescalar;
+  int nethandle;
 
-//    prescalar = uart_clock[ZXN_READ_REG(REG_VIDEO_TIMING)]  / 115200UL;
-//
-//    IO_UART_BAUD_RATE = prescalar & 0x7f;                   // lower 7 bits
-//    IO_UART_BAUD_RATE = ((prescalar >> 7) & 0x7f) | 0x80;   // upper 7 bits
+  //Pointless doing a static initialiation as union in struct means it is overwritten
+   rtc.call.driver = 0;	// This is the main system so RTC
+   rtc.call.function = 0;	// No API for rtc
+   rtc.de = 0;  // if needed
+   rtc.hl = 0; // if needed
+
+   net.call.driver = 'N';	// This is Network should be initialised above
+   net.call.function = NOS_Initialise;	// Default is Initialise?
+   net.de = 0;  // if needed
+   net.hl = 0; // if needed
+
+   net.call.driver = 'N';
+   net.call.function = NOS_Open ;
+   net.hl = CONNECTstring ;
+   net.de = strlen( CONNECTstring );
+
+    //      printf("%c, %x, %u, %u\n", *((unsigned char *)net),*((unsigned char *)net + 1), *(((int *)net) +1 ), *(((int *)net) + 2));
+    printf("HL is at %u of length %u.\n",(char *)CONNECTstring, strlen(CONNECTstring) );
+
+    if(esx_m_drvapi(&net)) {
+      printf ("NET Open Driver error %u.\n",errno);
+      exit(0);
+    }
+
 #endif
   io_initialized=1;
 
@@ -114,8 +151,13 @@ void io_send_byte(unsigned char b)
     send(sockfd,&b,sizeof(unsigned char), 0);
 #endif
 #ifdef __ESP8266__
-//   while (IO_UART_STATUS & IUS_TX_BUSY) ;
-//   IO_UART_TX = c;
+    net.call.driver = 'N';
+    net.call.function = NOS_OutputChar ;
+    net.de = nethandle << 8 | b;
+
+    if(esx_m_drvapi(&net))
+      printf ("NET Open send %c error %u.\n",b,errno);
+
 #endif
 
   }
@@ -190,6 +232,23 @@ void io_recv_serial(void)
 {  
 }
 
-void io_done()
-{
+void io_done() {
+
+#ifdef __SPECTRUM__
+#ifdef __ESP8266__
+  rtc.call.driver = 0;	// This is the main system so RTC
+  rtc.call.function = 0;	// No API for rtc
+  if (esx_m_drvapi(&rtc))
+    printf ("RTC Driver error %u.\n",errno);
+
+  printf("Time BC= %u DE= %u\n\n",rtc.bc, rtc.de);
+
+  printf("%c[m", 27);
+
+  net.call.function = NOS_Close ;
+  net.de = nethandle << 8;
+  if (esx_m_drvapi(&net))
+    printf ("NET Close Driver error.\n");
+#endif
+#endif
 }

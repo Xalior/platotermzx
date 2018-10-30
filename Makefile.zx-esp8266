@@ -10,7 +10,7 @@ OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
 CFLAGS=+zx -D__SPECTRUM__ -D__ESP8266__
-LDFLAGS=-lndos -lm -create-app -Cz--screen -Czsrc/ptzx-loading-splash-1.scr
+LDFLAGS=-lndos -lesxdos -lm -create-app -Cz--screen -Czsrc/ptzx-loading-splash-1.scr
 
 
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
