@@ -12,6 +12,9 @@
 #ifdef __SPECTRUM__
 #include <spectrum.h>
 #endif
+#ifdef __ESP8266__
+//??? What is the include for the ZXN ports on classiclib
+#endif
 #include "io.h"
 #include "protocol.h"
 
@@ -30,17 +33,17 @@ char host_name[32];
 #define RX 5179
 
 
-
-uint32_t uart_clock[] = {
-        CLK_28_0,
-        CLK_28_1,
-        CLK_28_2,
-        CLK_28_3,
-        CLK_28_4,
-        CLK_28_5,
-        CLK_28_6,
-        CLK_28_7
-};
+//
+//uint32_t uart_clock[] = {
+//        CLK_28_0,
+//        CLK_28_1,
+//        CLK_28_2,
+//        CLK_28_3,
+//        CLK_28_4,
+//        CLK_28_5,
+//        CLK_28_6,
+//        CLK_28_7
+//};
 #endif
 
 
@@ -99,6 +102,8 @@ void io_send_byte(unsigned char b)
       send(sockfd,&b,sizeof(unsigned char), 0);
     }
 #endif
+#ifdef __ESP8266__
+#endif
 #endif
 }
 
@@ -106,8 +111,7 @@ void io_main(void)
 {
 #ifdef __SPECTRUM__
 #ifdef __RS232__
-
-	//Don't try to wrap this in for Rasta bars, it just flashes every call to io_main.										
+	//Don't try to wrap this in for Rasta bars, it just flashes every call to io_main.
   if (rs232_get(&inb) != RS_ERR_NO_DATA)  	// *IRQ-OFF (RECEIVING DATA)
     {	/* [RX - Display] */
         if(is_extend==1) {zx_border(INK_BLACK);}  else {zx_border(INK_WHITE);}	//RS232 Raster Bars- A little lie, the IO has been done.
@@ -131,6 +135,8 @@ void io_main(void)
       bytes=recv(sockfd,rxdata,1,0);
       ShowPLATO(rxdata,1);
     }
+#endif
+#ifdef __ESP8266__
 #endif
 #endif
 }
