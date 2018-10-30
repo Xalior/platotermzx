@@ -10,7 +10,7 @@ OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
 CFLAGS=+zx -D__SPECTRUM__ -D__SPECTRANET__
-LDFLAGS=-lndos -llibsocket -lm -create-app
+LDFLAGS=-lndos -llibsocket -lm -create-app -Cz--screen -Czsrc\\ptzx-loading-splash-1.scr
 
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))

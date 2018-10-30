@@ -1,4 +1,4 @@
-TARGET_EXEC ?= platoPLUS.bin
+TARGET_EXEC ?= platoTERM.bin
 
 BUILD_DIR ?= ./build-ESP8266
 SRC_DIRS ?= ./src
@@ -10,7 +10,8 @@ OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
 CFLAGS=+zx -D__SPECTRUM__ -D__ESP8266__
-LDFLAGS=-lndos -lm -create-app
+LDFLAGS=-lndos -lm -create-app -Cz--screen -Czsrc/ptzx-loading-splash-1.scr
+
 
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
