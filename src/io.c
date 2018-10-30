@@ -67,10 +67,10 @@ void io_init(void)
 #ifdef __ESP8266__
     unsigned int prescalar;
 
-    prescalar = uart_clock[ZXN_READ_REG(REG_VIDEO_TIMING)]  / 115200UL;
-
-    IO_UART_BAUD_RATE = prescalar & 0x7f;                   // lower 7 bits
-    IO_UART_BAUD_RATE = ((prescalar >> 7) & 0x7f) | 0x80;   // upper 7 bits
+//    prescalar = uart_clock[ZXN_READ_REG(REG_VIDEO_TIMING)]  / 115200UL;
+//
+//    IO_UART_BAUD_RATE = prescalar & 0x7f;                   // lower 7 bits
+//    IO_UART_BAUD_RATE = ((prescalar >> 7) & 0x7f) | 0x80;   // upper 7 bits
 #endif
   io_initialized=1;
 
