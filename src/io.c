@@ -87,23 +87,38 @@ void io_open(void)
 void io_send_byte(unsigned char b)
 {
 #ifdef __SPECTRUM__
-#ifdef __RS232__
   if (io_initialized==1)
-    {
-      if(is_extend==1) {zx_border(INK_BLACK);}  else {zx_border(INK_WHITE);}	//RS232 Raster Bars
-      rs232_put(b);	//*IRQ-OFF (SENDING DATA)
+  {
+#ifdef __RS232__
+    if(is_extend==1)
+      {
+        zx_border(INK_BLACK);
+      }
+      else
+      {
+        zx_border(INK_WHITE);
+      }	//RS232 Raster Bars
 
-      if(is_extend==1) {zx_border(INK_GREEN);}  else {zx_border(INK_BLACK);}	//RS232 Raster Bars
-    }
+    rs232_put(b);	//*IRQ-OFF (SENDING DATA)
+
+    if(is_extend==1)
+      {
+        zx_border(INK_GREEN);
+      }
+      else
+      {
+        zx_border(INK_BLACK);
+      }	//RS232 Raster Bars
 #endif
 #ifdef __SPECTRANET__
-  if (io_initialized==1)
-    {
-      send(sockfd,&b,sizeof(unsigned char), 0);
-    }
+    send(sockfd,&b,sizeof(unsigned char), 0);
 #endif
 #ifdef __ESP8266__
+//   while (IO_UART_STATUS & IUS_TX_BUSY) ;
+//   IO_UART_TX = c;
 #endif
+
+  }
 #endif
 }
 
@@ -111,20 +126,40 @@ void io_main(void)
 {
 #ifdef __SPECTRUM__
 #ifdef __RS232__
-	//Don't try to wrap this in for Rasta bars, it just flashes every call to io_main.
+  //Don't try to wrap this in for Rasta bars, it just flashes every call to io_main.
   if (rs232_get(&inb) != RS_ERR_NO_DATA)  	// *IRQ-OFF (RECEIVING DATA)
     {	/* [RX - Display] */
-        if(is_extend==1) {zx_border(INK_BLACK);}  else {zx_border(INK_WHITE);}	//RS232 Raster Bars- A little lie, the IO has been done.
-	ShowPLATO(&inb,1);
-	if(is_extend==1) {zx_border(INK_GREEN);}  else {zx_border(INK_BLACK);}	//RS232 Raster Bars			
+      if(is_extend==1)
+      {
+        zx_border(INK_BLACK);
+      }
+      else
+      {
+        zx_border(INK_WHITE);
+      }	//RS232 Raster Bars- A little lie, the IO has been done.
+      ShowPLATO(&inb,1);
+      if(is_extend==1)
+      {
+        zx_border(INK_GREEN);
+      }
+      else
+      {
+        zx_border(INK_BLACK);
+      }	//RS232 Raster Bars
     }
   else
     {  /* [NO RX - KEY scan] */  
-	if(is_extend==1) {zx_border(INK_GREEN);}  else {zx_border(INK_BLACK);}	//RS232 Raster Bars
-	for(int Kscan=0;Kscan<30;Kscan++)  //Extra keyboard scanning
-	  {
-	    keyboard_main();
-	  }
+      if(is_extend==1) {
+        zx_border(INK_GREEN);
+      }
+      else
+      {
+        zx_border(INK_BLACK);
+      }	//RS232 Raster Bars
+      for(int Kscan=0;Kscan<30;Kscan++)  //Extra keyboard scanning
+      {
+        keyboard_main();
+      }
 
     }
 #endif
@@ -137,6 +172,16 @@ void io_main(void)
     }
 #endif
 #ifdef __ESP8266__
+//      for (unsigned char i = 0; i != 100; ++i)
+//        {    // wait a bit for a response
+//          if (IO_UART_STATUS & IUS_RX_AVAIL) break;
+//        }
+//
+//      while (IO_UART_STATUS & IUS_RX_AVAIL)
+//        {
+//          fputc(IO_UART_RX, rxdata);
+//          ShowPLATO(rxdata,1);
+//        }
 #endif
 #endif
 }
