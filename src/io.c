@@ -25,6 +25,23 @@ char rxdata[1024];
 struct hostent *he;
 char host_name[32];
 #endif
+#ifdef __ESP8266__
+#define TX 4923
+#define RX 5179
+
+
+
+uint32_t uart_clock[] = {
+        CLK_28_0,
+        CLK_28_1,
+        CLK_28_2,
+        CLK_28_3,
+        CLK_28_4,
+        CLK_28_5,
+        CLK_28_6,
+        CLK_28_7
+};
+#endif
 
 
 char io_initialized=0;
@@ -44,6 +61,14 @@ void io_init(void)
   remoteaddr.sin_addr.s_addr=he->h_addr;
   connect(sockfd,&remoteaddr,sizeof(struct sockaddr_in));
 #endif
+#ifdef __ESP8266__
+    unsigned int prescalar;
+
+    prescalar = uart_clock[ZXN_READ_REG(REG_VIDEO_TIMING)]  / 115200UL;
+
+    IO_UART_BAUD_RATE = prescalar & 0x7f;                   // lower 7 bits
+    IO_UART_BAUD_RATE = ((prescalar >> 7) & 0x7f) | 0x80;   // upper 7 bits
+#endif
   io_initialized=1;
 
 }
@@ -58,17 +83,14 @@ void io_open(void)
 
 void io_send_byte(unsigned char b)
 {
+#ifdef __SPECTRUM__
 #ifdef __RS232__
   if (io_initialized==1)
     {
-#ifdef __SPECTRUM__
       if(is_extend==1) {zx_border(INK_BLACK);}  else {zx_border(INK_WHITE);}	//RS232 Raster Bars
-#endif
       rs232_put(b);	//*IRQ-OFF (SENDING DATA)
 
-#ifdef __SPECTRUM__
       if(is_extend==1) {zx_border(INK_GREEN);}  else {zx_border(INK_BLACK);}	//RS232 Raster Bars
-#endif
     }
 #endif
 #ifdef __SPECTRANET__
@@ -77,29 +99,25 @@ void io_send_byte(unsigned char b)
       send(sockfd,&b,sizeof(unsigned char), 0);
     }
 #endif
+#endif
 }
 
 void io_main(void)
 {
+#ifdef __SPECTRUM__
 #ifdef __RS232__
 
 	//Don't try to wrap this in for Rasta bars, it just flashes every call to io_main.										
   if (rs232_get(&inb) != RS_ERR_NO_DATA)  	// *IRQ-OFF (RECEIVING DATA)
-    {	/* [RX - Display] */ 	
-#ifdef __SPECTRUM__
+    {	/* [RX - Display] */
         if(is_extend==1) {zx_border(INK_BLACK);}  else {zx_border(INK_WHITE);}	//RS232 Raster Bars- A little lie, the IO has been done.
-#endif
 	ShowPLATO(&inb,1);
-#ifdef __SPECTRUM__
 	if(is_extend==1) {zx_border(INK_GREEN);}  else {zx_border(INK_BLACK);}	//RS232 Raster Bars			
-#endif
     }
   else
     {  /* [NO RX - KEY scan] */  
-#ifdef __SPECTRUM__
 	if(is_extend==1) {zx_border(INK_GREEN);}  else {zx_border(INK_BLACK);}	//RS232 Raster Bars
-#endif										 		
-	for(int Kscan=0;Kscan<30;Kscan++)  //Extra keyboard scanning					
+	for(int Kscan=0;Kscan<30;Kscan++)  //Extra keyboard scanning
 	  {
 	    keyboard_main();
 	  }
@@ -113,6 +131,7 @@ void io_main(void)
       bytes=recv(sockfd,rxdata,1,0);
       ShowPLATO(rxdata,1);
     }
+#endif
 #endif
 }
 
