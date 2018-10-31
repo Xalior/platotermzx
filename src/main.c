@@ -13,9 +13,6 @@ unsigned char already_started=0;
 
 void main(void)
 {
-#ifdef __SPECTRUM__
-  zx_border(INK_BLACK);  //Tidy up the borders on start up
-#endif
   screen_init();
   terminal_init();
   ShowPLATO(splash,sizeof(splash));
@@ -25,7 +22,8 @@ void main(void)
 #endif
   io_init();
 
-  bit_play("2A--");  //Ready beep
+// this hangs us
+//  bit_play("2A--");  //Ready beep
 
   for (;;)
     {

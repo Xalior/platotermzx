@@ -96,9 +96,8 @@ char rxdata[1024];
  int nethandle;
 
 static struct esx_drvapi rtc ;// = { 0,0,0 }; //Can't initialise this, if you leave it in it causes error
-static struct esx_drvapi net ;// = { 'N'*256 + 0, 0, 0 };
 
-static char CONNECTstring[32] = "TCP,IRATA.ONLINE,8005";
+static char CONNECTstring[32] = "\"TCP\",\"IRATA.ONLINE\",8005";
 
 static unsigned long uart_clock[] = { CLK_28_0, CLK_28_1, CLK_28_2, CLK_28_3, CLK_28_4, CLK_28_5, CLK_28_6, CLK_28_7 };
 
@@ -132,17 +131,8 @@ void io_init(void)
    rtc.de = 0;  // if needed
    rtc.hl = 0; // if needed
 
-   net.call.driver = 'N';	// This is Network should be initialised above
-   net.call.function = NOS_Initialise;	// Default is Initialise?
-   net.de = 0;  // if needed
-   net.hl = 0; // if needed
 
-   net.call.driver = 'N';
-   net.call.function = NOS_Open ;
-   net.hl = CONNECTstring ;
-   net.de = strlen( CONNECTstring );
-
-    //      printf("%c, %x, %u, %u\n", *((unsigned char *)net),*((unsigned char *)net + 1), *(((int *)net) +1 ), *(((int *)net) + 2));
+    printf("%c, %x, %u, %u\n", *((unsigned char *)net),*((unsigned char *)net + 1), *(((int *)net) +1 ), *(((int *)net) + 2));
     printf("HL is at %u of length %u.\n",(char *)CONNECTstring, strlen(CONNECTstring) );
 
   // how do we negotiate baud rate?
@@ -158,6 +148,9 @@ void io_init(void)
 #endif
   io_initialized=1;
 
+#ifdef __SPECTRUM__
+  zx_border(INK_MAGENTA);  //Tidy up the borders on start up
+#endif
 }
 
 void io_init_funcptrs(void)
@@ -200,8 +193,8 @@ void io_send_byte(unsigned char b)
 #ifdef __ESP8266__
     while (IO_UART_STATUS & IUS_TX_BUSY) ;
 	 IO_UART_TX = b;
-
-      printf("<%s>",rxdata);
+//
+//      printf("<%s>",rxdata);
 #endif
 
   }
@@ -258,7 +251,7 @@ void io_main(void)
     }
 #endif
 #ifdef __ESP8266__
-        zx_border(INK_BLACK);
+  zx_border(INK_BLUE);
   while (IO_UART_STATUS & IUS_RX_AVAIL)
     {
       if(is_extend==1)
@@ -271,7 +264,7 @@ void io_main(void)
       }	//RS232 Raster Bars- A little lie, the IO has been done.
 
       *rxdata = IO_UART_RX;
-      printf("[%s]",rxdata);
+//      printf("[%s]",rxdata);
       ShowPLATO(rxdata,1);
 
       if(is_extend==1)
