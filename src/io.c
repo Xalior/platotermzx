@@ -84,6 +84,7 @@ void io_init(void)
 #ifdef __ESP8266__
   int nethandle;
 
+    printf("(DRV MODE)\n" );
   //Pointless doing a static initialiation as union in struct means it is overwritten
    rtc.call.driver = 0;	// This is the main system so RTC
    rtc.call.function = 0;	// No API for rtc
@@ -214,16 +215,12 @@ void io_main(void)
     }
 #endif
 #ifdef __ESP8266__
-//      for (unsigned char i = 0; i != 100; ++i)
-//        {    // wait a bit for a response
-//          if (IO_UART_STATUS & IUS_RX_AVAIL) break;
-//        }
-//
-//      while (IO_UART_STATUS & IUS_RX_AVAIL)
-//        {
-//          fputc(IO_UART_RX, rxdata);
-//          ShowPLATO(rxdata,1);
-//        }
+    net.call.driver = 'N';
+    net.call.function = NOS_OutputChar ;
+    net.de = nethandle << 8 | HELLOstring[x];
+    if(esx_m_drvapi(&net))
+       printf ("NET Open send %c error %u.\n",HELLOstring[x],errno);
+     }
 #endif
 #endif
 }
