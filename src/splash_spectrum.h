@@ -4,7 +4,7 @@
 #include "protocol.h" // for padByte
 
 const padByte splash[] = 
-{  
+{
   0x1B,
  0x02,
 0X1B,

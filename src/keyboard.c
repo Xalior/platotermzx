@@ -77,7 +77,6 @@ void keyboard_main(void)
   ch=getk();	
   if (ch!=0x00)
     {
-	/* bit_fx4(0);  //Keyboard click  - until I find some thing better */
       keyboard_click(); // maybe something better? ;) -thom
       
       if (is_extend==0 && ch==0x0e) // EXTEND pressed.

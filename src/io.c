@@ -215,12 +215,12 @@ void io_main(void)
     }
 #endif
 #ifdef __ESP8266__
-    net.call.driver = 'N';
-    net.call.function = NOS_OutputChar ;
-    net.de = nethandle << 8 | HELLOstring[x];
-    if(esx_m_drvapi(&net))
-       printf ("NET Open send %c error %u.\n",HELLOstring[x],errno);
-     }
+//    net.call.driver = 'N';
+//    net.call.function = NOS_OutputChar ;
+//    net.de = nethandle << 8 | HELLOstring[x];
+//    if(esx_m_drvapi(&net))
+//       printf ("NET Open send %c error %u.\n",HELLOstring[x],errno);
+//     }
 #endif
 #endif
 }

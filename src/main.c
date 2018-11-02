@@ -14,7 +14,7 @@ unsigned char already_started=0;
 void main(void)
 {
 #ifdef __SPECTRUM__
-  zx_border(INK_BLACK);  //Tidy up the borders on start up
+//  zx_border(INK_BLACK);  //Tidy up the borders on start up
 #endif
   screen_init();
   terminal_init();

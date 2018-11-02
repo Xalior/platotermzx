@@ -2,7 +2,11 @@
 #define SPLASH_H
 
 #ifdef __SPECTRUM__
+#ifdef __SPECNEXT__
+#include "splash_specnext.h"
+#else
 #include "splash_spectrum.h"
+#endif
 #endif
 
 #ifdef __CPC__

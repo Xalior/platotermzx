@@ -1,0 +1,3 @@
+[submodule "zxnext_layer2"]
+	path = zxnext_layer2
+	url = https://github.com/stefanbylund/zxnext_layer2.git
