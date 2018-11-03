@@ -62,19 +62,25 @@ void screen_init(void)
 {
 #ifdef __PC6001__
     int mode = 1;
-  console_ioctl(IOCTL_GENCON_SET_MODE,&mode);
+    console_ioctl(IOCTL_GENCON_SET_MODE,&mode);
 #endif
-//    clg();
+    screen_clear();
 #ifdef __SPECNEXT__
     layer2_set_main_screen_ram_bank(9);     // Where do the 16k chunks for the FB really live?
     layer2_set_shadow_screen_ram_bank(12);  // ... same for the 16k chunks for the Double Buffer
 
     layer2_configure(true, false, false, 0);
 
+    // make it so we can see through black, this makes ULA handling easier...
+    layer2_set_global_transparency_color(0);
 
+#ifdef __DEBUG__
+    // Put the Layer2 over the ULA
     layer2_set_layer_priorities(LAYER_PRIORITIES_U_L_S);
-
+#else
+    // put the ULA over the Layer2
     layer2_set_layer_priorities(LAYER_PRIORITIES_L_U_S);
+#endif
 #endif
 }
 
@@ -90,7 +96,6 @@ void screen_wait(void)
  */
 void screen_beep(void)
 {
-    printf("beep;");
 #ifdef __SPECTRUM__
     bit_frequency(.2,440);
 #endif
@@ -101,12 +106,13 @@ void screen_beep(void)
  */
 void screen_clear(void)
 {
-    printf("clg;");
-//  clg();
-
 #ifdef __SPECTRUM__
     zx_colour(PAPER_BLACK|INK_WHITE);
+#ifdef __SPECNEXT__
+    layer2_fill_rect(0,0, 256, 192, backgroundColor, NULL);
 #endif
+#endif
+clg();
 }
 
 /**
@@ -114,7 +120,6 @@ void screen_clear(void)
  */
 void screen_block_draw(padPt* Coord1, padPt* Coord2)
 {
-    printf("drawblock;");
     if (CurMode==ModeErase || CurMode==ModeInverse)
         bx(scalex[Coord1->x],scaley[Coord1->y],scalex[Coord2->x],scaley[Coord2->y]);
     else
@@ -126,14 +131,16 @@ void screen_block_draw(padPt* Coord1, padPt* Coord2)
  */
 void screen_dot_draw(padPt* Coord)
 {
-    printf("drawdot;");
-#ifdef __SPECNEXT__
-    layer2_draw_pixel(scalex[Coord->x],   scaley[Coord->y],  0x03, NULL);
-#endif
-#ifndef __SPECNEXT__
     if (CurMode==ModeErase || CurMode==ModeInverse)
+#ifdef __SPECNEXT__
+        layer2_draw_pixel(scalex[Coord->x],   scaley[Coord->y],  backgroundColor, NULL);
+#else
         unplot(scalex[Coord->x],scaley[Coord->y]);
+#endif
     else
+#ifdef __SPECNEXT__
+        layer2_draw_pixel(scalex[Coord->x],   scaley[Coord->y],  foregroundColor, NULL);
+#else
         plot(scalex[Coord->x],scaley[Coord->y]);
 #endif
 }
@@ -428,9 +435,17 @@ void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
 #endif
 #endif
                         if (altColor==0)
+#ifndef __SPECNEXT__
                             unplot(*px,*py);
+#else
+                            layer2_draw_pixel(*px,*py, backgroundColor, NULL);
+#endif
                         else
+#ifndef __SPECNEXT__
                             plot(*px,*py);
+#else
+                        layer2_draw_pixel(*px,*py, foregroundColor, NULL);
+#endif
                     }
                 }
 
@@ -496,13 +511,14 @@ void screen_foreground(padRGB* theColor)
 #ifdef __SPECNEXT__
     unsigned char red=(theColor->red>>5)<<5;
     unsigned char green=(theColor->green>>5)<<2;
-    unsigned char blue=(theColor->blue>>3);
+    unsigned char blue=(theColor->blue>>6);
     foregroundColor=red+green+blue;
+    printf("ScrFG(%d,%d,%d => %d,%d,%d = %d)\n",theColor->red,theColor->green,theColor->blue,red,green,blue,foregroundColor);
 #else
   unsigned char red=theColor->red;
   unsigned char green=theColor->green;
   unsigned char blue=theColor->blue;
-  
+
   if (red==0 && green==0 && blue==0)
     {
       foregroundColor=INK_BLACK;
@@ -536,6 +552,7 @@ void screen_foreground(padRGB* theColor)
       foregroundColor=INK_WHITE;
     }
 #endif
+#endif
 }
 
 /**
@@ -546,14 +563,15 @@ void screen_background(padRGB* theColor)
 #ifdef __SPECTRUM__
 #ifdef __SPECNEXT__
     unsigned char red=(theColor->red>>5)<<5;
-    unsigned char green=(theColor->green>>6)<<3;
-    unsigned char blue=(theColor->blue>>3);
+    unsigned char green=(theColor->green>>5)<<2;
+    unsigned char blue=(theColor->blue>>6);
     backgroundColor=red+green+blue;
+    printf("ScrBG(%d,%d,%d => %d,%d,%d = %d)\n",theColor->red,theColor->green,theColor->blue,red,green,blue,backgroundColor);
 #else
   unsigned char red=theColor->red;
   unsigned char green=theColor->green;
   unsigned char blue=theColor->blue;
-  
+
   if (red==0 && green==0 && blue==0)
     {
       backgroundColor=PAPER_BLACK;
@@ -596,7 +614,11 @@ void screen_background(padRGB* theColor)
 void screen_paint(padPt* Coord)
 {
     printf("paint;");
-//    fill(scalex[Coord->x],scaley[Coord->y]);
+#ifdef __SPECNEXT__
+    layer2_fill_rect(scalex[Coord->x]-2,scaley[Coord->y]-2, 5, 5, foregroundColor, NULL);
+#else
+    fill(scalex[Coord->x],scaley[Coord->y]);
+#endif
 }
 
 /**
