@@ -64,7 +64,6 @@ void screen_init(void)
     int mode = 1;
     console_ioctl(IOCTL_GENCON_SET_MODE,&mode);
 #endif
-    screen_clear();
 #ifdef __SPECNEXT__
     layer2_set_main_screen_ram_bank(9);     // Where do the 16k chunks for the FB really live?
     layer2_set_shadow_screen_ram_bank(12);  // ... same for the 16k chunks for the Double Buffer
@@ -82,6 +81,7 @@ void screen_init(void)
     layer2_set_layer_priorities(LAYER_PRIORITIES_L_U_S);
 #endif
 #endif
+    screen_clear();
 }
 
 /**
@@ -106,13 +106,18 @@ void screen_beep(void)
  */
 void screen_clear(void)
 {
+    printf("x");
 #ifdef __SPECTRUM__
     zx_colour(PAPER_BLACK|INK_WHITE);
 #ifdef __SPECNEXT__
     layer2_fill_rect(0,0, 256, 192, backgroundColor, NULL);
 #endif
 #endif
-clg();
+#ifndef __SPECNEXT__
+#ifndef __DEBUG__
+    clg();
+#endif
+#endif
 }
 
 /**
@@ -120,6 +125,7 @@ clg();
  */
 void screen_block_draw(padPt* Coord1, padPt* Coord2)
 {
+    printf("#");
     if (CurMode==ModeErase || CurMode==ModeInverse)
         bx(scalex[Coord1->x],scaley[Coord1->y],scalex[Coord2->x],scaley[Coord2->y]);
     else
@@ -177,6 +183,7 @@ void screen_line_draw(padPt* Coord1, padPt* Coord2)
  */
 void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
 {
+    printf("c");
     short offset; /* due to negative offsets */
     unsigned short x;      /* Current X and Y coordinates */
     unsigned short y;
@@ -341,9 +348,9 @@ void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
                         {
 #ifdef __SPECTRUM__
 #ifndef __SPECNEXT__
-                            *zx_pxy2aaddr(*px+1,*py)=foregroundColor;
-                            *zx_pxy2aaddr(*px,*py+1)=foregroundColor;
-                            *zx_pxy2aaddr(*px+1,*py+1)=foregroundColor;
+                            *zx_pxy2aaddr(*px+1,*py)=backgroundColor;
+                            *zx_pxy2aaddr(*px,*py+1)=backgroundColor;
+                            *zx_pxy2aaddr(*px+1,*py+1)=backgroundColor;
 #else
                             layer2_draw_pixel(*px+1,*py, backgroundColor, NULL);
                             layer2_draw_pixel(*px,*py+1, backgroundColor, NULL);
@@ -382,9 +389,17 @@ void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
 #endif
 #endif
                     if (mainColor==0)
+#ifndef __SPECNEXT__
                         unplot(*px,*py);
+#else
+                        layer2_draw_pixel(*px,*py, backgroundColor, NULL);
+#endif
                     else
+#ifndef __SPECNEXT__
                         plot(*px,*py);
+#else
+                        layer2_draw_pixel(*px,*py, foregroundColor, NULL);
+#endif
                 }
                 else
                 {
@@ -397,8 +412,8 @@ void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
 #ifdef __SPECTRUM__
 #ifndef __SPECNEXT__
                                 *zx_pxy2aaddr(*px+1,*py)=foregroundColor;
-                                *zx_pxy2aaddr(*px,*py+1)=foregroundColor;
-                                *zx_pxy2aaddr(*px+1,*py+1)=foregroundColor;
+                                *zx_pxy2aaddr(*px,*py+1)=backgroundColor;
+                                *zx_pxy2aaddr(*px+1,*py+1)=backgroundColor;
 #else
                                 layer2_draw_pixel(*px+1,*py, backgroundColor, NULL);
                                 layer2_draw_pixel(*px,*py+1, backgroundColor, NULL);
@@ -471,7 +486,7 @@ void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
  */
 void screen_tty_char(padByte theChar)
 {
-    printf("ttychar;");
+    printf("TTYCHAR;");
     if ((theChar >= 0x20) && (theChar < 0x7F)) {
         screen_char_draw(&TTYLoc, &theChar, 1);
         TTYLoc.x += CharWide;
@@ -513,7 +528,7 @@ void screen_foreground(padRGB* theColor)
     unsigned char green=(theColor->green>>5)<<2;
     unsigned char blue=(theColor->blue>>6);
     foregroundColor=red+green+blue;
-    printf("ScrFG(%d,%d,%d => %d,%d,%d = %d)\n",theColor->red,theColor->green,theColor->blue,red,green,blue,foregroundColor);
+    printf("\nScrFG(%d,%d,%d => %d,%d,%d =  %ld);",theColor->red,theColor->green,theColor->blue,red,green,blue,foregroundColor);
 #else
   unsigned char red=theColor->red;
   unsigned char green=theColor->green;
@@ -566,7 +581,7 @@ void screen_background(padRGB* theColor)
     unsigned char green=(theColor->green>>5)<<2;
     unsigned char blue=(theColor->blue>>6);
     backgroundColor=red+green+blue;
-    printf("ScrBG(%d,%d,%d => %d,%d,%d = %d)\n",theColor->red,theColor->green,theColor->blue,red,green,blue,backgroundColor);
+    printf("\nScrBG(%d,%d,%d => %d,%d,%d = %ld);",theColor->red,theColor->green,theColor->blue,red,green,blue,backgroundColor);
 #else
   unsigned char red=theColor->red;
   unsigned char green=theColor->green;

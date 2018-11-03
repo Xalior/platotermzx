@@ -5,7 +5,7 @@
 #ifdef __SPECNEXT__
 #include "splash_specnext.h"
 #else
-#include "splash_spectrum.h"
+#include "splash_specnext.h"
 #endif
 #endif
 
