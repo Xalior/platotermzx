@@ -65,19 +65,20 @@ void screen_init(void)
     console_ioctl(IOCTL_GENCON_SET_MODE,&mode);
 #endif
 #ifdef __SPECNEXT__
+    // set it up like NextZXOS
     layer2_set_main_screen_ram_bank(9);     // Where do the 16k chunks for the FB really live?
     layer2_set_shadow_screen_ram_bank(12);  // ... same for the 16k chunks for the Double Buffer
 
     layer2_configure(true, false, false, 0);
 
     // make it so we can see through black, this makes ULA handling easier...
-    layer2_set_global_transparency_color(0);
+    layer2_set_global_transparency_color(231);
 
 #ifdef __DEBUG__
-    // Put the Layer2 over the ULA
+    // put the ULA over the Layer2
     layer2_set_layer_priorities(LAYER_PRIORITIES_U_L_S);
 #else
-    // put the ULA over the Layer2
+    // Put the Layer2 over the ULA
     layer2_set_layer_priorities(LAYER_PRIORITIES_L_U_S);
 #endif
 #endif
@@ -106,11 +107,12 @@ void screen_beep(void)
  */
 void screen_clear(void)
 {
-    printf("x");
 #ifdef __SPECTRUM__
-    zx_colour(PAPER_BLACK|INK_WHITE);
+    zx_colour(PAPER_MAGENTA|INK_WHITE|BRIGHT);
 #ifdef __SPECNEXT__
+#ifndef __DEBUG__
     layer2_fill_rect(0,0, 256, 192, backgroundColor, NULL);
+#endif
 #endif
 #endif
 #ifndef __SPECNEXT__
@@ -183,7 +185,6 @@ void screen_line_draw(padPt* Coord1, padPt* Coord2)
  */
 void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
 {
-    printf("c");
     short offset; /* due to negative offsets */
     unsigned short x;      /* Current X and Y coordinates */
     unsigned short y;
@@ -486,7 +487,7 @@ void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
  */
 void screen_tty_char(padByte theChar)
 {
-    printf("TTYCHAR;");
+    printf("TTY;");
     if ((theChar >= 0x20) && (theChar < 0x7F)) {
         screen_char_draw(&TTYLoc, &theChar, 1);
         TTYLoc.x += CharWide;
@@ -528,7 +529,7 @@ void screen_foreground(padRGB* theColor)
     unsigned char green=(theColor->green>>5)<<2;
     unsigned char blue=(theColor->blue>>6);
     foregroundColor=red+green+blue;
-    printf("\nScrFG(%d,%d,%d => %d,%d,%d =  %ld);",theColor->red,theColor->green,theColor->blue,red,green,blue,foregroundColor);
+//    printf("\nScrFG(%d,%d,%d => %d,%d,%d =  %ld);",theColor->red,theColor->green,theColor->blue,red,green,blue,foregroundColor);
 #else
   unsigned char red=theColor->red;
   unsigned char green=theColor->green;
@@ -581,7 +582,7 @@ void screen_background(padRGB* theColor)
     unsigned char green=(theColor->green>>5)<<2;
     unsigned char blue=(theColor->blue>>6);
     backgroundColor=red+green+blue;
-    printf("\nScrBG(%d,%d,%d => %d,%d,%d = %ld);",theColor->red,theColor->green,theColor->blue,red,green,blue,backgroundColor);
+//    printf("\nScrBG(%d,%d,%d => %d,%d,%d = %ld);",theColor->red,theColor->green,theColor->blue,red,green,blue,backgroundColor);
 #else
   unsigned char red=theColor->red;
   unsigned char green=theColor->green;
@@ -623,14 +624,51 @@ void screen_background(padRGB* theColor)
 #endif
 }
 
+uint8_t queue[4000];
+
+uint16_t queue_head, queue_tail = 0;
+}
+
+void queuePush(x,y) {
+    if(queue_head<3999) {
+        if (layer2_get_pixel(x, y) != backgroundColor) {
+            queue[queue_head] = x;
+            queue_head++;
+            queue[queue_head] = y;
+            queue_head++;
+        }
+    }
+}
+
+void queueCheck(x,y) {
+    if (layer2_get_pixel(x, y) != backgroundColor) {
+        layer2_draw_pixel(x, y, backgroundColor, NULL);
+        queuePush(x, y + 1);
+        queuePush(x + 1, y);
+        queuePush(x, y - 1);
+        queuePush(x - 1, y);
+    }
+}
+
+void layer2_fill(uint8_t x, uint8_t y) {
+    queue_head=0; queue_tail=0;
+    queueCheck(x,y);
+
+    while(queue_tail<queue_head) {
+        queueCheck(queue[queue_tail], queue[queue_tail+1]);
+        queue_tail++;queue_tail++;
+    }
+//    layer2_fill(x)
+}
+
+
 /**
  * Flood fill
  */
 void screen_paint(padPt* Coord)
 {
-    printf("paint;");
 #ifdef __SPECNEXT__
-    layer2_fill_rect(scalex[Coord->x]-2,scaley[Coord->y]-2, 5, 5, foregroundColor, NULL);
+    layer2_fill(scalex[Coord->x],scaley[Coord->y]);
 #else
     fill(scalex[Coord->x],scaley[Coord->y]);
 #endif
