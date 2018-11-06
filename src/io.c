@@ -12,7 +12,7 @@
 #ifdef __SPECTRUM__
 #include <spectrum.h>
 #endif
-#ifdef __ESP8266__
+#ifdef __ESPATDRV__
 #include <arch/zxn/esxdos.h>
 #include <errno.h>
 #endif
@@ -29,7 +29,55 @@ char rxdata[1024];
 struct hostent *he;
 char host_name[32];
 #endif
-#ifdef __ESP8266__
+#ifdef __ESPATCMD__
+#include <arch/zxn/esxdos.h>
+#include <errno.h>
+
+int nethandle;
+unsigned int prescalar;
+
+// tbblue registry system
+
+__sfr __banked __at 0x243b IO_243B;
+__sfr __banked __at 0x243b IO_NEXTREG_REG;
+
+__sfr __banked __at 0x253b IO_253B;
+__sfr __banked __at 0x253b IO_NEXTREG_DAT;
+
+#define REG_VIDEO_TIMING  17
+
+// io ports - uart
+
+__sfr __banked __at 0x143b IO_143B;
+__sfr __banked __at 0x143b IO_UART_RX;
+__sfr __banked __at 0x143b IO_UART_BAUD_RATE;
+
+__sfr __banked __at 0x133b IO_133B;
+__sfr __banked __at 0x133b IO_UART_TX;
+__sfr __banked __at 0x133b IO_UART_STATUS;
+
+// actual uart clock as a function of video timing 0-7
+
+#define CLK_28_0  28000000
+#define CLK_28_1  28571429
+#define CLK_28_2  29464286
+#define CLK_28_3  30000000
+#define CLK_28_4  31000000
+#define CLK_28_5  32000000
+#define CLK_28_6  33000000
+#define CLK_28_7  27000000
+
+// 0x133b, IO_UART_STATUS
+
+#define IUS_RX_AVAIL  0x01
+#define IUS_RX_FULL  0x04
+#define IUS_TX_BUSY  0x02
+
+static char CONNECTstring[32] = "TCP,IRATA.ONLINE,8005";
+
+static unsigned long uart_clock[] = { CLK_28_0, CLK_28_1, CLK_28_2, CLK_28_3, CLK_28_4, CLK_28_5, CLK_28_6, CLK_28_7 };
+#endif
+#ifdef __ESPATDRV__
 
 
 #define NOS_Initialise	 0x80
@@ -59,8 +107,6 @@ static struct esx_drvapi rtc ;// = { 0,0,0 }; //Can't initialise this, if you le
 static struct esx_drvapi net ;// = { 'N'*256 + 0, 0, 0 };
 
 static char CONNECTstring[32] = "TCP,IRATA.ONLINE,8005";
-
-
 #endif
 
 
@@ -81,7 +127,7 @@ void io_init(void)
   remoteaddr.sin_addr.s_addr=he->h_addr;
   connect(sockfd,&remoteaddr,sizeof(struct sockaddr_in));
 #endif
-#ifdef __ESP8266__
+#ifdef __ESPATDRV__
   int nethandle;
 
 //    printf("(DRV MODE)\n" );
@@ -109,6 +155,17 @@ void io_init(void)
       exit(0);
     }
 
+#endif
+#ifdef __ESPATCMD__
+  // how do we negotiate baud rate?
+
+  // set 115200 bps
+
+  IO_NEXTREG_REG = REG_VIDEO_TIMING;
+  prescalar = uart_clock[IO_NEXTREG_DAT] / 115200UL;
+
+  IO_UART_BAUD_RATE = prescalar & 0x7f;                   // lower 7 bits
+  IO_UART_BAUD_RATE = ((prescalar >> 7) & 0x7f) | 0x80;   // upper 7 bits
 #endif
   io_initialized=1;
 
@@ -151,7 +208,7 @@ void io_send_byte(unsigned char b)
 #ifdef __SPECTRANET__
     send(sockfd,&b,sizeof(unsigned char), 0);
 #endif
-#ifdef __ESP8266__
+#ifdef __ESPATDRV__
     net.call.driver = 'N';
     net.call.function = NOS_OutputChar ;
     net.de = nethandle << 8 | b;
@@ -160,7 +217,11 @@ void io_send_byte(unsigned char b)
       printf ("NET Open send %c error %u.\n",b,errno);
 
 #endif
+#ifdef __ESPATCMD__
+    while (IO_UART_STATUS & IUS_TX_BUSY) ;
+	 IO_UART_TX = b;
 
+#endif
   }
 #endif
 }
@@ -214,7 +275,15 @@ void io_main(void)
       ShowPLATO(rxdata,1);
     }
 #endif
-#ifdef __ESP8266__
+#ifdef __ESPATDRV__
+    net.call.driver = 'N';
+    net.call.function = NOS_OutputChar ;
+    net.de = nethandle << 8 | HELLOstring[x];
+    if(esx_m_drvapi(&net))
+       printf ("NET Open send %c error %u.\n",HELLOstring[x],errno);
+     }
+#endif
+#ifdef __ESPATCMD__
 //    net.call.driver = 'N';
 //    net.call.function = NOS_OutputChar ;
 //    net.de = nethandle << 8 | HELLOstring[x];
@@ -232,7 +301,10 @@ void io_recv_serial(void)
 void io_done() {
 
 #ifdef __SPECTRUM__
-#ifdef __ESP8266__
+#ifdef __ESPATCMD__
+   printf("%c[m", 27);
+#endif
+#ifdef __ESPATDRV__
   rtc.call.driver = 0;	// This is the main system so RTC
   rtc.call.function = 0;	// No API for rtc
   if (esx_m_drvapi(&rtc))

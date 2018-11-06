@@ -624,10 +624,11 @@ void screen_background(padRGB* theColor)
 #endif
 }
 
+#ifdef __SPECNEXT__
+
 uint8_t queue[4000];
 
 uint16_t queue_head, queue_tail = 0;
-}
 
 void queuePush(x,y) {
     if(queue_head<3999) {
@@ -658,10 +659,8 @@ void layer2_fill(uint8_t x, uint8_t y) {
         queueCheck(queue[queue_tail], queue[queue_tail+1]);
         queue_tail++;queue_tail++;
     }
-//    layer2_fill(x)
 }
-
-
+#endif
 /**
  * Flood fill
  */

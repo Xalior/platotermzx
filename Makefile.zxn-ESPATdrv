@@ -9,7 +9,7 @@ SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
-CFLAGS=+zx -D__SPECTRUM__ -D__SPECNEXT__ -D__ESP8266__ -D__DEBUG__
+CFLAGS=+zx -D__SPECTRUM__ -D__SPECNEXT__ -D__ESPATDRV__ -D__DEBUG__
 #LDFLAGS=-lndos -lesxdos -lzxnext_layer2 -lm -Lzxnext_layer2/lib/sccz80  -create-app -Cz--screen -Czsrc/ptzx-loading-splash-1.scr
 LDFLAGS=-lndos -lesxdos  -lm \
     -Lzxnext_layer2/lib/sccz80 -lzxnext_layer2 -Izxnext_layer2/include \
