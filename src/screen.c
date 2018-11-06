@@ -23,8 +23,8 @@ unsigned char CharHigh=16;
 padPt TTYLoc;
 #ifdef __SPECTRUM__
 #ifndef __SPECNEXT__
-long foregroundColor=INK_WHITE;
-long backgroundColor=PAPER_BLACK;
+uint8_t foregroundColor=INK_WHITE;
+uint8_t backgroundColor=PAPER_BLACK;
 #endif
 #ifdef __SPECNEXT__
 long foregroundColor=0xFF;
@@ -164,7 +164,9 @@ void screen_line_draw(padPt* Coord1, padPt* Coord2)
     unsigned char y2=scaley[Coord2->y];
 
     unsigned short x,y;
+#ifndef __SPECNEXT__
     unsigned char* aaddr;
+#endif
 
     if (CurMode==ModeErase || CurMode==ModeInverse)
 #ifdef __SPECNEXT__
@@ -202,7 +204,9 @@ void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
     unsigned char altColor=0;
     unsigned char *p;
     unsigned char* curfont;
+#ifndef __SPECNEXT__
     unsigned char* aaddr;
+#endif
 
     switch(CurMem)
     {
@@ -625,12 +629,14 @@ void screen_background(padRGB* theColor)
 }
 
 #ifdef __SPECNEXT__
-
-uint8_t queue[4000];
+uint8_t queue[] = (uint8_t *)0x2000;
 
 uint16_t queue_head, queue_tail = 0;
 
 void queuePush(x,y) {
+    // Page in the required layer-2 MMU page into MMU slot 0.
+    bpoke(0x243B,0x51);
+    bpoke(0x253B,16);
     if(queue_head<3999) {
         if (layer2_get_pixel(x, y) != backgroundColor) {
             queue[queue_head] = x;
@@ -639,6 +645,8 @@ void queuePush(x,y) {
             queue_head++;
         }
     }
+    bpoke(0x243B,0x51);
+    bpoke(0x253B,0);
 }
 
 void queueCheck(x,y) {
@@ -655,10 +663,14 @@ void layer2_fill(uint8_t x, uint8_t y) {
     queue_head=0; queue_tail=0;
     queueCheck(x,y);
 
+    bpoke(0x243B,0x51);
+    bpoke(0x253B,16);
     while(queue_tail<queue_head) {
         queueCheck(queue[queue_tail], queue[queue_tail+1]);
         queue_tail++;queue_tail++;
     }
+    bpoke(0x243B,0x51);
+    bpoke(0x253B,0);
 }
 #endif
 /**
