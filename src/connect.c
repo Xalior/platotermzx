@@ -24,3 +24,5 @@ void connect(void)
   help_clear();
 }
 #endif
+// Without this comment this file is empty unless __SPECTRANET__ is defined
+//  and that's invalid C99. Bad Geek, No Cookie.

@@ -121,10 +121,11 @@ void io_init(void)
   remoteaddr.sin_addr.s_addr=he->h_addr;
   connect(sockfd,&remoteaddr,sizeof(struct sockaddr_in));
 #endif
-#ifdef __ESP8266__
+#ifdef __ESPATcmd__
   int nethandle;
   unsigned int prescalar;
 
+//    printf("(DRV MODE)\n" );
   //Pointless doing a static initialiation as union in struct means it is overwritten
    rtc.call.driver = 0;	// This is the main system so RTC
    rtc.call.function = 0;	// No API for rtc
@@ -132,8 +133,8 @@ void io_init(void)
    rtc.hl = 0; // if needed
 
 
-    printf("%c, %x, %u, %u\n", *((unsigned char *)net),*((unsigned char *)net + 1), *(((int *)net) +1 ), *(((int *)net) + 2));
-    printf("HL is at %u of length %u.\n",(char *)CONNECTstring, strlen(CONNECTstring) );
+  //      printf("%c, %x, %u, %u\n", *((unsigned char *)net),*((unsigned char *)net + 1), *(((int *)net) +1 ), *(((int *)net) + 2));
+  //    printf("HL is at %u of length %u.\n",(char *)CONNECTstring, strlen(CONNECTstring) );
 
   // how do we negotiate baud rate?
 
@@ -190,7 +191,7 @@ void io_send_byte(unsigned char b)
 #ifdef __SPECTRANET__
     send(sockfd,&b,sizeof(unsigned char), 0);
 #endif
-#ifdef __ESP8266__
+#ifdef __ESPATcmd__
     while (IO_UART_STATUS & IUS_TX_BUSY) ;
 	 IO_UART_TX = b;
 //
@@ -250,7 +251,7 @@ void io_main(void)
       ShowPLATO(rxdata,1);
     }
 #endif
-#ifdef __ESP8266__
+#ifdef __ESPATcmd__
   zx_border(INK_BLUE);
   while (IO_UART_STATUS & IUS_RX_AVAIL)
     {
