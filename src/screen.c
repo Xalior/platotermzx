@@ -3,6 +3,8 @@
 #ifdef __SPECTRUM__
 #include <spectrum.h>
 #ifdef __SPECNEXT__
+#include "specnext.h"
+#include "intrinsic.h"
 #include "zxnext_layer2/include/zxnext_layer2.h"
 #include <stdio.h>
 #endif
@@ -27,8 +29,8 @@ long foregroundColor=INK_WHITE;
 long backgroundColor=PAPER_BLACK;
 #endif
 #ifdef __SPECNEXT__
-long foregroundColor=0xFF;
-long backgroundColor=0x00;
+uint8_t foregroundColor=0xFF;
+uint8_t backgroundColor=0x00;
 #endif
 #endif
 
@@ -487,7 +489,6 @@ void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
  */
 void screen_tty_char(padByte theChar)
 {
-    printf("TTY;");
     if ((theChar >= 0x20) && (theChar < 0x7F)) {
         screen_char_draw(&TTYLoc, &theChar, 1);
         TTYLoc.x += CharWide;
@@ -624,23 +625,57 @@ void screen_background(padRGB* theColor)
 #endif
 }
 
-uint8_t queue[4000];
+uint8_t *queue = (uint8_t *)0x2000;
 
-uint16_t queue_head, queue_tail = 0;
-}
+uint16_t queue_head, queue_tail;
 
-void queuePush(x,y) {
-    if(queue_head<3999) {
-        if (layer2_get_pixel(x, y) != backgroundColor) {
-            queue[queue_head] = x;
-            queue_head++;
-            queue[queue_head] = y;
-            queue_head++;
-        }
+void queuePush(uint8_t x,uint8_t y) {
+    printf(" Q%d,%d",x,y);
+    if((layer2_get_pixel(x, y) != backgroundColor)) {
+        // Page in the required scratch page into MMU slot 1. (ROM OFF)
+
+        intrinsic_di();
+
+        IO_NEXTREG_REG = REG_MMU1;
+        IO_NEXTREG_DAT = 30;
+
+        queue[queue_head] = (uint8_t)x;
+        queue_head++;
+        queue[queue_head] = (uint8_t)y;
+        queue_head++;
+        // Page in the required scratch page into MMU slot 1. (ROM ON)
+        IO_NEXTREG_REG = REG_MMU1;
+        IO_NEXTREG_DAT = 0xff;
+
+        intrinsic_ei();
+
+        printf("v ");
+    } else {
+        printf("n ");
     }
+
 }
 
-void queueCheck(x,y) {
+uint8_t queuePop() {
+    uint8_t itm;
+
+    intrinsic_di();
+    // Page in the required RAM page into MMU slot 1.
+    IO_NEXTREG_REG = REG_MMU1;
+    IO_NEXTREG_DAT = 30;
+
+    itm = queue[queue_tail];
+    queue_tail++;
+
+    // Page out the RAM page into MMU slot 1, back to ROM
+    IO_NEXTREG_REG = REG_MMU1;
+    IO_NEXTREG_DAT = 0xff;
+    intrinsic_ei();
+
+    return itm;
+}
+
+void queueCheck(uint8_t x,uint8_t y) {
     if (layer2_get_pixel(x, y) != backgroundColor) {
         layer2_draw_pixel(x, y, backgroundColor, NULL);
         queuePush(x, y + 1);
@@ -655,10 +690,9 @@ void layer2_fill(uint8_t x, uint8_t y) {
     queueCheck(x,y);
 
     while(queue_tail<queue_head) {
-        queueCheck(queue[queue_tail], queue[queue_tail+1]);
-        queue_tail++;queue_tail++;
+        printf("(%d<%d)",queue_tail,queue_head);
+        queueCheck(queuePop(), queuePop());
     }
-//    layer2_fill(x)
 }
 
 
@@ -668,7 +702,7 @@ void layer2_fill(uint8_t x, uint8_t y) {
 void screen_paint(padPt* Coord)
 {
 #ifdef __SPECNEXT__
-    layer2_fill(scalex[Coord->x],scaley[Coord->y]);
+    layer2_fill((uint8_t )scalex[Coord->x],(uint8_t )scaley[Coord->y]);
 #else
     fill(scalex[Coord->x],scaley[Coord->y]);
 #endif

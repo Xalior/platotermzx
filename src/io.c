@@ -16,42 +16,6 @@
 #include <arch/zxn/esxdos.h>
 #include <errno.h>
 
-// tbblue registry system
-
-__sfr __banked __at 0x243b IO_243B;
-__sfr __banked __at 0x243b IO_NEXTREG_REG;
-
-__sfr __banked __at 0x253b IO_253B;
-__sfr __banked __at 0x253b IO_NEXTREG_DAT;
-
-#define REG_VIDEO_TIMING  17
-
-// io ports - uart
-
-__sfr __banked __at 0x143b IO_143B;
-__sfr __banked __at 0x143b IO_UART_RX;
-__sfr __banked __at 0x143b IO_UART_BAUD_RATE;
-
-__sfr __banked __at 0x133b IO_133B;
-__sfr __banked __at 0x133b IO_UART_TX;
-__sfr __banked __at 0x133b IO_UART_STATUS;
-
-// actual uart clock as a function of video timing 0-7
-
-#define CLK_28_0  28000000
-#define CLK_28_1  28571429
-#define CLK_28_2  29464286
-#define CLK_28_3  30000000
-#define CLK_28_4  31000000
-#define CLK_28_5  32000000
-#define CLK_28_6  33000000
-#define CLK_28_7  27000000
-
-// 0x133b, IO_UART_STATUS
-
-#define IUS_RX_AVAIL  0x01
-#define IUS_RX_FULL  0x04
-#define IUS_TX_BUSY  0x02
 
 #endif
 
@@ -151,6 +115,12 @@ void io_init(void)
 
 #ifdef __SPECTRUM__
   zx_border(INK_MAGENTA);  //Tidy up the borders on start up
+#ifdef __SPECNEXT__
+
+    // Put Z80 in 14 MHz turbo mode.
+//    ZXN_NEXTREGA(REG_PERIPHERAL_2, ZXN_READ_REG(REG_PERIPHERAL_2) | RP2_ENABLE_TURBO);
+//    ZXN_NEXTREG(REG_TURBO_MODE, RTM_14MHZ);
+#endif
 #endif
 }
 
