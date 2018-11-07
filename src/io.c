@@ -84,7 +84,7 @@ void io_init(void)
 #ifdef __ESP8266__
   int nethandle;
 
-    printf("(DRV MODE)\n" );
+//    printf("(DRV MODE)\n" );
   //Pointless doing a static initialiation as union in struct means it is overwritten
    rtc.call.driver = 0;	// This is the main system so RTC
    rtc.call.function = 0;	// No API for rtc
@@ -102,7 +102,7 @@ void io_init(void)
    net.de = strlen( CONNECTstring );
 
     //      printf("%c, %x, %u, %u\n", *((unsigned char *)net),*((unsigned char *)net + 1), *(((int *)net) +1 ), *(((int *)net) + 2));
-    printf("HL is at %u of length %u.\n",(char *)CONNECTstring, strlen(CONNECTstring) );
+//    printf("HL is at %u of length %u.\n",(char *)CONNECTstring, strlen(CONNECTstring) );
 
     if(esx_m_drvapi(&net)) {
       printf ("NET Open Driver error %u.\n",errno);
