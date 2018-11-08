@@ -630,34 +630,34 @@ uint8_t *queue = (uint8_t *)0x2000;
 uint16_t queue_head, queue_tail;
 
 void queuePush(uint8_t x,uint8_t y) {
-    printf(" Q%d,%d",x,y);
-    if((layer2_get_pixel(x, y) != backgroundColor)) {
-        // Page in the required scratch page into MMU slot 1. (ROM OFF)
+    if(x<0)return;
+    if(x>254)return;
+    if(y<0)return;
+    if(y>192)return;
+    if(queue_head<7889) {
+        if ((layer2_get_pixel(x, y) != backgroundColor)) {
+            // Page in the required scratch page into MMU slot 1. (ROM OFF)
 
-        intrinsic_di();
+            intrinsic_di();
 
-        IO_NEXTREG_REG = REG_MMU1;
-        IO_NEXTREG_DAT = 30;
+            IO_NEXTREG_REG = REG_MMU1;
+            IO_NEXTREG_DAT = 30;
 
-        queue[queue_head] = (uint8_t)x;
-        queue_head++;
-        queue[queue_head] = (uint8_t)y;
-        queue_head++;
-        // Page in the required scratch page into MMU slot 1. (ROM ON)
-        IO_NEXTREG_REG = REG_MMU1;
-        IO_NEXTREG_DAT = 0xff;
+            queue[queue_head] =  x;
+            queue_head++;
+            queue[queue_head] =  y;
+            queue_head++;
+            // Page in the required scratch page into MMU slot 1. (ROM ON)
+            IO_NEXTREG_REG = REG_MMU1;
+            IO_NEXTREG_DAT = 0xff;
 
-        intrinsic_ei();
-
-        printf("v ");
-    } else {
-        printf("n ");
+            intrinsic_ei();
+        }
     }
-
 }
 
 uint8_t queuePop() {
-    uint8_t itm;
+    uint8_t itm = 0;
 
     intrinsic_di();
     // Page in the required RAM page into MMU slot 1.
@@ -665,12 +665,12 @@ uint8_t queuePop() {
     IO_NEXTREG_DAT = 30;
 
     itm = queue[queue_tail];
-    queue_tail++;
 
     // Page out the RAM page into MMU slot 1, back to ROM
     IO_NEXTREG_REG = REG_MMU1;
     IO_NEXTREG_DAT = 0xff;
     intrinsic_ei();
+    queue_tail++;
 
     return itm;
 }
@@ -685,12 +685,12 @@ void queueCheck(uint8_t x,uint8_t y) {
     }
 }
 
-void layer2_fill(uint8_t x, uint8_t y) {
+void layer2_fill(int x, int y) {
+    clg();
     queue_head=0; queue_tail=0;
     queueCheck(x,y);
 
     while(queue_tail<queue_head) {
-        printf("(%d<%d)",queue_tail,queue_head);
         queueCheck(queuePop(), queuePop());
     }
 }
