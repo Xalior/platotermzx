@@ -685,8 +685,7 @@ void queueCheck(uint8_t x,uint8_t y) {
     }
 }
 
-void layer2_fill(int x, int y) {
-    clg();
+void layer2_fill(uint8_t x, uint8_t y) {
     queue_head=0; queue_tail=0;
     queueCheck(x,y);
 
