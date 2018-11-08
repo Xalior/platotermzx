@@ -13,7 +13,6 @@ CFLAGS=+zx -D__SPECTRUM__ -D__SPECNEXT__ -D__ESPATDRV__ -D__DEBUG__
 #LDFLAGS=-lndos -lesxdos -lzxnext_layer2 -lm -Lzxnext_layer2/lib/sccz80  -create-app -Cz--screen -Czsrc/ptzx-loading-splash-1.scr
 LDFLAGS=-lndos -lesxdos  -lm \
     -Lzxnext_layer2/lib/sccz80 -lzxnext_layer2 -Izxnext_layer2/include \
-    -pragma-include:zpragma.inc \
     -create-app  -subtype=sna
 
 

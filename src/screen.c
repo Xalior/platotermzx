@@ -626,7 +626,6 @@ void screen_background(padRGB* theColor)
 }
 
 uint8_t *queue = (uint8_t *)0x2000;
-
 uint16_t queue_head, queue_tail;
 
 void queuePush(uint8_t x,uint8_t y) {
@@ -634,7 +633,7 @@ void queuePush(uint8_t x,uint8_t y) {
     if(x>254)return;
     if(y<0)return;
     if(y>192)return;
-    if(queue_head<7889) {
+    if(queue_head<7998) {
         if ((layer2_get_pixel(x, y) != backgroundColor)) {
             // Page in the required scratch page into MMU slot 1. (ROM OFF)
 
@@ -642,7 +641,7 @@ void queuePush(uint8_t x,uint8_t y) {
 
             IO_NEXTREG_REG = REG_MMU1;
             IO_NEXTREG_DAT = 30;
-
+//
             queue[queue_head] =  x;
             queue_head++;
             queue[queue_head] =  y;
@@ -687,8 +686,10 @@ void queueCheck(uint8_t x,uint8_t y) {
 
 void layer2_fill(uint8_t x, uint8_t y) {
     queue_head=0; queue_tail=0;
-    queueCheck(x,y);
 
+//    uint8_t queue[2];
+    queueCheck(x,y);
+//
     while(queue_tail<queue_head) {
         queueCheck(queuePop(), queuePop());
     }
